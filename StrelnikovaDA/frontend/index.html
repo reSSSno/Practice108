@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Проверка орфографии</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <section class="card hero">
+      <h1>Проверка орфографии</h1>
+      <p class="subtitle">
+        Микросервисное веб-приложение: frontend + backend + worker + gateway через Docker Compose.
+      </p>
+    </section>
+
+    <section class="card form-card">
+      <label for="language">Язык проверки</label>
+      <select id="language">
+        <option value="auto" selected>Автоопределение</option>
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+      </select>
+
+      <label for="text">Текст</label>
+      <textarea id="text" rows="10" placeholder="Например: Превет мир! This sentense contains erors."></textarea>
+
+      <div class="actions">
+        <button id="checkBtn">Проверить орфографию</button>
+        <button id="fillDemoBtn" class="secondary">Заполнить пример</button>
+      </div>
+    </section>
+
+    <section class="card status-card">
+      <div class="status-row">
+        <span>Статус задачи:</span>
+        <strong id="taskStatus">ожидание</strong>
+      </div>
+      <div class="status-row">
+        <span>ID задачи:</span>
+        <code id="taskId">—</code>
+      </div>
+    </section>
+
+    <section class="grid">
+      <section class="card">
+        <h2>Исправленный текст</h2>
+        <pre id="correctedText" class="output empty">Результат появится здесь.</pre>
+      </section>
+
+      <section class="card">
+        <h2>Ошибки и рекомендации</h2>
+        <div id="issues" class="issues empty">Ошибки ещё не найдены.</div>
+      </section>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

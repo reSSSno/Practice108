@@ -1,0 +1,109 @@
+services:
+  gateway:
+    build: ./gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - spellcheck-net
+
+  frontend:
+    build: ./frontend
+    expose:
+      - "80"
+    networks:
+      - spellcheck-net
+
+  backend:
+    build: ./backend
+    environment:
+      WORKER_URL: http://worker:8001
+      REQUEST_TIMEOUT_SECONDS: 10
+    expose:
+      - "8000"
+    depends_on:
+      - worker
+    networks:
+      - spellcheck-net
+
+  worker:
+    build: ./worker
+    environment:
+      DB_PATH: /data/tasks.db
+      SPELLCHECK_DELAY_SECONDS: 3
+    expose:
+      - "8001"
+    volumes:
+      - worker-data:/data
+    networks:
+      - spellcheck-net
+
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/config.yml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    networks:
+      - spellcheck-net
+
+  mimir:
+    image: grafana/mimir:latest
+    command: -config.file=/etc/mimir/config.yml
+    ports:
+      - "9009:9009"
+    volumes:
+      - ./monitoring/mimir/config.yml:/etc/mimir/config.yml:ro
+      - mimir-data:/data/mimir
+    networks:
+      - spellcheck-net
+
+  alloy:
+    image: grafana/alloy:latest
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+      - mimir
+      - backend
+    networks:
+      - spellcheck-net
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - loki
+      - mimir
+    networks:
+      - spellcheck-net
+
+networks:
+  spellcheck-net:
+    driver: bridge
+
+volumes:
+  worker-data:
+  loki-data:
+  mimir-data:
+  grafana-data:

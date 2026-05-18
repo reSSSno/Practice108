@@ -1,0 +1,74 @@
+{
+  "uid": "spellcheck-monitoring",
+  "title": "Practice107 Spellcheck Monitoring",
+  "tags": ["practice107", "monitoring"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Всего запросов на проверку орфографии",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Mimir"
+      },
+      "targets": [
+        {
+          "expr": "sum(spellcheck_requests_total)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Динамика количества пользовательских запросов",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Mimir"
+      },
+      "targets": [
+        {
+          "expr": "sum(spellcheck_requests_total)",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 0
+      }
+    },
+    {
+      "id": 3,
+      "type": "logs",
+      "title": "Логи микросервисов",
+      "datasource": {
+        "type": "loki",
+        "uid": "Loki"
+      },
+      "targets": [
+        {
+          "expr": "{service=~\"gateway|frontend|backend|worker\"}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      }
+    }
+  ]
+}
