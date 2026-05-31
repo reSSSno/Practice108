@@ -9,71 +9,78 @@ on:
 jobs:
   security-checks:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SerovAA
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # нужен для gitleaks
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # 1. Автотесты (pytest)
       - name: Install dependencies for tests
         run: |
           pip install -r backend/requirements.txt
           pip install -r worker/requirements.txt
           pip install pytest
+
       - name: Run backend tests
-        working-directory: .
         run: PYTHONPATH=. pytest tests/test_backend.py -v
         env:
           REDIS_HOST: localhost
+
       - name: Run worker tests
-        working-directory: .
         run: PYTHONPATH=. pytest tests/test_worker.py -v
         env:
           REDIS_HOST: localhost
 
-      # 2. Статический анализ Bandit
       - name: Install Bandit
         run: pip install bandit
+
       - name: Run Bandit on backend
         run: bandit -r backend -f json -o bandit-backend.json || true
+
       - name: Run Bandit on worker
         run: bandit -r worker -f json -o bandit-worker.json || true
+
       - name: Upload Bandit reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: bandit-reports
-          path: bandit-*.json
+          path: SerovAA/bandit-*.json   # полный путь от корня репозитория
 
-      # 3. Поиск секретов Gitleaks
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true  # не останавливаем пайплайн, но отчёт сохраним
+        continue-on-error: true
 
-      # 4. Сканирование уязвимостей Trivy (репозиторий и Dockerfile)
       - name: Install Trivy
         run: |
           wget https://github.com/aquasecurity/trivy/releases/download/v0.49.1/trivy_0.49.1_Linux-64bit.deb
           sudo dpkg -i trivy_0.49.1_Linux-64bit.deb
+
       - name: Scan filesystem with Trivy
-        run: trivy fs --severity HIGH,CRITICAL --no-progress --exit-code 0 .
+        run: trivy fs --severity HIGH,CRITICAL --no-progress --exit-code 0 ../SerovAA
+
       - name: Scan Dockerfile (backend)
         run: trivy config --severity HIGH,CRITICAL backend/Dockerfile
+
       - name: Scan Dockerfile (worker)
         run: trivy config --severity HIGH,CRITICAL worker/Dockerfile
 
-      # 5. (Опционально) CodeQL — для более глубокого анализа
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: python
+          source-root: SerovAA
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
