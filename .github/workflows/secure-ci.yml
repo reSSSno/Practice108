@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+
 jobs:
   security-checks:
     runs-on: ubuntu-latest
@@ -81,13 +86,13 @@ jobs:
           echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install -y trivy
-      
+
       - name: Scan filesystem with Trivy
         run: trivy fs --severity HIGH,CRITICAL --no-progress --exit-code 0 .
-      
+
       - name: Scan Dockerfile (backend)
         run: trivy config --severity HIGH,CRITICAL backend/Dockerfile
-      
+
       - name: Scan Dockerfile (worker)
         run: trivy config --severity HIGH,CRITICAL worker/Dockerfile
 
