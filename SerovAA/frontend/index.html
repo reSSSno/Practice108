@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Password Generator</title>
+    <style>
+        body { font-family: Arial; max-width: 500px; margin: 50px auto; padding: 20px; }
+        input, button { margin: 10px 0; padding: 8px; }
+        .result { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+        .status { color: gray; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Password Generator</h1>
+    
+    <label>Length: <input type="number" id="length" value="12" min="6" max="32"></label><br>
+    <label><input type="checkbox" id="digits" checked> Digits</label><br>
+    <label><input type="checkbox" id="special" checked> Special chars</label><br>
+    
+    <button onclick="generatePassword()">Generate</button>
+    <button onclick="checkStatus()">Check Status</button>
+
+    <div class="result">
+        <strong>Password:</strong> <span id="password">-</span><br>
+        <strong>Task ID:</strong> <span id="taskId">-</span><br>
+        <strong>Status:</strong> <span id="status" class="status">Idle</span>
+    </div>
+
+    <script>
+        async function generatePassword() {
+            const length = document.getElementById('length').value;
+            const useDigits = document.getElementById('digits').checked;
+            const useSpecial = document.getElementById('special').checked;
+
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({length, use_digits: useDigits, use_special: useSpecial})
+            });
+            const data = await response.json();
+            document.getElementById('taskId').innerText = data.task_id;
+            document.getElementById('status').innerText = 'Processing...';
+            document.getElementById('password').innerText = '-';
+            
+            // Poll for result
+            pollResult(data.task_id);
+        }
+
+        async function pollResult(taskId) {
+            const interval = setInterval(async () => {
+                const response = await fetch(`/api/result/${taskId}`);
+                const data = await response.json();
+                if (data.status === 'completed') {
+                    document.getElementById('password').innerText = data.password;
+                    document.getElementById('status').innerText = 'Completed!';
+                    clearInterval(interval);
+                } else if (data.status === 'failed') {
+                    document.getElementById('status').innerText = 'Failed';
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+
+        async function checkStatus() {
+            const taskId = document.getElementById('taskId').innerText;
+            if (taskId !== '-') {
+                const response = await fetch(`/api/result/${taskId}`);
+                const data = await response.json();
+                document.getElementById('status').innerText = data.status;
+            }
+        }
+    </script>
+</body>
+</html>
