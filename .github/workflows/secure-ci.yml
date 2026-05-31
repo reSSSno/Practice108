@@ -73,12 +73,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.deb
-          sudo dpkg -i trivy_Linux-64bit.deb
+      - name: Install Trivy CLI
+        uses: ankurk91/install-trivy-cli-action@v2
+        with:
+          version: 'v0.62.0' # или 'latest' но лучше фиксированную версию
       
       - name: Scan filesystem with Trivy
         run: trivy fs --severity HIGH,CRITICAL --no-progress --exit-code 0 .
